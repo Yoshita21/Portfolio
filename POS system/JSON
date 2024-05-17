@@ -1,0 +1,21 @@
+create or replace view v_P_Details AS SELECT `order`.ID, json_arrayagg(json_object("Product_Name", product.name, 
+"Unit_Price", unitPrice,"Quantity", quantity )) AS ProductDetails 
+from orderLine left join `order`
+ON `order`.ID = orderLine.orderID
+LEFT JOIN product 
+ON orderLine.productID = product.ID
+group by `order`.ID;
+
+select json_object("Customer_Name",CONCAT(firstName, " ", lastName),
+"Customer_address", address1, 
+"Order_Details", json_arrayagg(DISTINCT json_object("Date_Orderplaced", datePlaced,"Product_Details", v_P_Details.ProductDetails)))
+from customer LEFT JOIN `order`
+ON customer.ID = order.customerID
+LEFT JOIN orderLine
+ON order.ID = orderLine.orderID
+LEFT JOIN v_P_Details
+ON orderLine.orderID = v_P_Details.ID
+group by customer.ID
+into outfile 'milestone.json';
+
+
